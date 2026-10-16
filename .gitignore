@@ -1,0 +1,16 @@
+# Generated simulation / database outputs (regenerate with make)
+build/
+*.vcd
+*.vvp
+*.db
+*.db.tmp
+!tests/fixtures/*.vcd
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Editor / OS files
+*.swp
+*~
+.DS_Store

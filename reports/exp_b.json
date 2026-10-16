@@ -1,0 +1,39 @@
+{
+  "experiment": "exp_b",
+  "diagnosed_by": "Claude Code subagent",
+  "first_failure": {"time": 436000, "cycle": 44, "test": "underflow", "check": "count", "observed": "0xf", "expected": "0x0"},
+  "root_cause": {
+    "file": "build/debug/exp_b/rtl/sync_fifo.sv",
+    "line": 71,
+    "signal": "rd_ptr",
+    "hypothesis": "The read pointer increment is gated by the raw request rd_en (line 71: `if (rd_en) rd_ptr <= rd_ptr + 1'b1;`) instead of the accepted-read qualifier rd_fire (rd_en && !empty). When the FIFO is empty and rd_en is held high (the underflow test), the read is correctly dropped for rd_data (rd_fire=0) but rd_ptr still advances. At the edge at 435000 ps, wr_ptr=0000 and rd_ptr=0000 (empty=1, rd_fire=0, underflow=1), yet rd_ptr moved to 0001, so count = wr_ptr - rd_ptr wrapped to 1111 (15) and empty deasserted. From then on the DUT believes it holds 15 entries: rd_fire becomes 1, stale memory (mem[1]=0x0a, ...) is read out on rd_data, and underflow is no longer flagged, causing all subsequent count/empty/underflow/rd_data errors in the underflow and wraparound tests."
+  },
+  "evidence": [
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_ptr", "time": 434000, "observed_value": "0000", "interpretation": "Write pointer before the failing edge; unchanged since 315000, no writes in the underflow phase."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_ptr", "time": 434000, "observed_value": "0000", "interpretation": "rd_ptr == wr_ptr before edge 435000: FIFO genuinely empty."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.empty", "time": 434000, "observed_value": "1", "interpretation": "DUT correctly reports empty before the failing edge."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_en", "time": 434000, "observed_value": "1", "interpretation": "A read is requested while empty."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_fire", "time": 434000, "observed_value": "0", "interpretation": "Read correctly not accepted (rd_en && !empty = 0); rd_ptr must therefore hold."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.underflow", "time": 434000, "observed_value": "1", "interpretation": "Dropped read correctly flagged before the edge."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_en", "time": 434000, "observed_value": "0", "interpretation": "No concurrent write, so nothing should change at edge 435000."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_ptr", "time": 436000, "observed_value": "0001", "interpretation": "rd_ptr advanced despite rd_fire=0 at the edge: the divergence point."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.count", "time": 436000, "observed_value": "1111", "interpretation": "count = 0000 - 0001 wraps to 15; matches the first ERROR (got 0xf expected 0x0)."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.empty", "time": 436000, "observed_value": "0", "interpretation": "empty deasserts because pointers no longer match; matches ERROR empty got 0x0."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_data", "time": 436000, "observed_value": "00010000", "interpretation": "rd_data correctly held (0x10) at the failing edge since rd_fire was 0; the data path itself is gated correctly."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.rd_ptr", "start": 420000, "end": 450000, "observed_changes": [[425000, "0000"], [435000, "0001"], [445000, "0010"]], "interpretation": "Increment at 425000 is a legal read (count 1->0); increments at 435000 and 445000 occur while FIFO should be empty."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.wr_ptr", "start": 420000, "end": 450000, "observed_changes": [], "interpretation": "wr_ptr constant at 0000 throughout the window."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.count", "start": 420000, "end": 450000, "observed_changes": [[425000, "0000"], [435000, "1111"], [445000, "1110"]], "interpretation": "count reaches 0 then wraps to 15 and decrements: underflow of the pointer difference."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.rd_fire", "start": 420000, "end": 450000, "observed_changes": [[425000, "0"], [435000, "1"]], "interpretation": "rd_fire was 0 during cycle 425000-435000 yet rd_ptr incremented at 435000; afterwards rd_fire=1 only because the corrupted pointers make the FIFO look non-empty."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.rd_data", "start": 420000, "end": 450000, "observed_changes": [[425000, "00010000"], [445000, "00001010"]], "interpretation": "At 445000 stale data 0x0a (mem[1]) is read out: consequence of the corrupted rd_ptr; matches ERROR rd_data got 0xa expected 0x10 at 446000."},
+    {"tool": "value", "signal": "tb_sync_fifo.g_mem[1].word", "time": 440000, "observed_value": "00001010", "interpretation": "Stale storage word at address 1 equals the bogus rd_data value, confirming the read was from rd_ptr[2:0]=1."}
+  ],
+  "alternative_hypotheses_considered": [
+    "count/empty derivation (lines 53, 56) wrong: rejected - both are correct functions of the pointers; wr_ptr=0000/rd_ptr=0001 really gives 1111 and empty=0, so the pointers themselves are corrupted.",
+    "rd_fire definition (line 51) wrong: rejected - rd_fire was 0 at 434000 with rd_en=1/empty=1, exactly per spec.",
+    "rd_data update gating (line 69-70) wrong: rejected - rd_data held 0x10 across the dropped read at edge 435000; rd_data errors only start after the pointer was corrupted.",
+    "Write-side bug (wr_ptr/wr_fire/mem write): rejected - wr_en=0 and wr_ptr unchanged throughout the window; tests fill/drain/overflow passed.",
+    "Testbench/reference model error: rejected - spec states reads while empty are dropped; DUT's own rd_fire/underflow agree the read was dropped, yet rd_ptr moved."
+  ],
+  "confidence": "high",
+  "limitations": "Diagnosis is a hypothesis supported by waveform evidence and RTL inspection, not a formal proof. The fix (gate rd_ptr increment with rd_fire) was not simulated, since re-running the simulator was disallowed. Only the window around the first failure was examined in detail; later errors (wraparound test, etc.) are attributed to the same cause by inference."
+}

@@ -1,0 +1,527 @@
+{
+  "injected_faults": 3,
+  "reports_found": 3,
+  "correct_diagnoses": 3,
+  "incorrect_diagnoses": [],
+  "first_failure_matches": 3,
+  "evidence_verified": 51,
+  "evidence_total": 51,
+  "results": [
+    {
+      "experiment": "exp_a",
+      "fault_id": "F3_full_flag",
+      "status": "evaluated",
+      "reported_location": "build/debug/exp_a/rtl/sync_fifo.sv:54",
+      "accepted_lines": [
+        54,
+        55
+      ],
+      "location_match": true,
+      "reported_signal": "full",
+      "accepted_signals": [
+        "full"
+      ],
+      "signal_match": true,
+      "diagnosis_correct": true,
+      "first_failure_reported": {
+        "time": 126000,
+        "cycle": 13
+      },
+      "first_failure_actual": {
+        "time": 126000,
+        "cycle": 13,
+        "test": "fill",
+        "check": "full"
+      },
+      "first_failure_match": true,
+      "evidence_total": 16,
+      "evidence_verified": 16,
+      "evidence_checks": [
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": [
+            56000,
+            147000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": [
+            56000,
+            147000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.full",
+          "time": [
+            56000,
+            147000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.count",
+          "time": [
+            56000,
+            147000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.wr_fire",
+          "time": [
+            56000,
+            147000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.overflow",
+          "time": [
+            56000,
+            147000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.wr_en",
+          "time": [
+            120000,
+            141000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.full",
+          "time": 115000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.count",
+          "time": 126000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.full",
+          "time": 126000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.m_count",
+          "time": 126000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": 126000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": 126000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": 306000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": 306000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.full",
+          "time": 306000,
+          "verified": true,
+          "problem": null
+        }
+      ],
+      "confidence": "high",
+      "injected_fault": "Full flag is generated incorrectly: it asserts when DEPTH-1 entries are stored (off-by-one, wrap bit ignored)."
+    },
+    {
+      "experiment": "exp_b",
+      "fault_id": "F2_rd_ptr_on_empty",
+      "status": "evaluated",
+      "reported_location": "build/debug/exp_b/rtl/sync_fifo.sv:71",
+      "accepted_lines": [
+        71,
+        72
+      ],
+      "location_match": true,
+      "reported_signal": "rd_ptr",
+      "accepted_signals": [
+        "rd_ptr"
+      ],
+      "signal_match": true,
+      "diagnosis_correct": true,
+      "first_failure_reported": {
+        "time": 436000,
+        "cycle": 44
+      },
+      "first_failure_actual": {
+        "time": 436000,
+        "cycle": 44,
+        "test": "underflow",
+        "check": "count"
+      },
+      "first_failure_match": true,
+      "evidence_total": 17,
+      "evidence_verified": 17,
+      "evidence_checks": [
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": 434000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": 434000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.empty",
+          "time": 434000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_en",
+          "time": 434000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_fire",
+          "time": 434000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.underflow",
+          "time": 434000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_en",
+          "time": 434000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": 436000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.count",
+          "time": 436000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.empty",
+          "time": 436000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_data",
+          "time": 436000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": [
+            420000,
+            450000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": [
+            420000,
+            450000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.count",
+          "time": [
+            420000,
+            450000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.rd_fire",
+          "time": [
+            420000,
+            450000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.rd_data",
+          "time": [
+            420000,
+            450000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.g_mem[1].word",
+          "time": 440000,
+          "verified": true,
+          "problem": null
+        }
+      ],
+      "confidence": "high",
+      "injected_fault": "Read pointer advances on rd_en even when the FIFO is empty (pointer update gated by rd_en instead of rd_fire)."
+    },
+    {
+      "experiment": "exp_c",
+      "fault_id": "F1_wr_ptr_on_full",
+      "status": "evaluated",
+      "reported_location": "build/debug/exp_c/rtl/sync_fifo.sv:67",
+      "accepted_lines": [
+        67,
+        68
+      ],
+      "location_match": true,
+      "reported_signal": "wr_ptr",
+      "accepted_signals": [
+        "wr_ptr"
+      ],
+      "signal_match": true,
+      "diagnosis_correct": true,
+      "first_failure_reported": {
+        "time": 326000,
+        "cycle": 33
+      },
+      "first_failure_actual": {
+        "time": 326000,
+        "cycle": 33,
+        "test": "overflow",
+        "check": "count"
+      },
+      "first_failure_match": true,
+      "evidence_total": 18,
+      "evidence_verified": 18,
+      "evidence_checks": [
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.count",
+          "time": 321000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.full",
+          "time": 321000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.overflow",
+          "time": 321000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_fire",
+          "time": 321000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_en",
+          "time": 321000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": 321000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": 326000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": 326000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.count",
+          "time": 326000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.full",
+          "time": 326000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "value",
+          "signal": "tb_sync_fifo.dut.overflow",
+          "time": 331000,
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.wr_ptr",
+          "time": [
+            300000,
+            350000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.rd_ptr",
+          "time": [
+            300000,
+            350000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.full",
+          "time": [
+            300000,
+            350000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.wr_fire",
+          "time": [
+            300000,
+            350000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.dut.count",
+          "time": [
+            300000,
+            350000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.g_mem[1].word",
+          "time": [
+            320000,
+            350000
+          ],
+          "verified": true,
+          "problem": null
+        },
+        {
+          "tool": "history",
+          "signal": "tb_sync_fifo.wr_data",
+          "time": [
+            320000,
+            350000
+          ],
+          "verified": true,
+          "problem": null
+        }
+      ],
+      "confidence": "high",
+      "injected_fault": "Write pointer advances on wr_en even when the FIFO is full (pointer update gated by wr_en instead of wr_fire; storage write still gated)."
+    }
+  ]
+}

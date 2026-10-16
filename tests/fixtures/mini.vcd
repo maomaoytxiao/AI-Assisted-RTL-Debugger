@@ -1,0 +1,65 @@
+$date
+	handwritten fixture
+$end
+$version
+	ai-dv-fifo milestone 2 test fixture
+$end
+$comment
+	Exercises: X/Z (upper and lower case), shortened vectors, identifier
+	aliases, ambiguous leaf names, real values, two changes of one signal
+	at the same timestamp, $dumpoff/$dumpon, and a "1 ns" timescale.
+$end
+$timescale 1 ns $end
+$scope module top $end
+$var wire 1 ! clk $end
+$var wire 8 " bus [7:0] $end
+$var reg 4 # state [3:0] $end
+$var real 64 $ temp $end
+$scope module u0 $end
+$var wire 1 ! clk $end
+$var wire 8 % bus [7:0] $end
+$var wire 1 & en $end
+$upscope $end
+$scope module u1 $end
+$var wire 1 ' en $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+0!
+bz "
+bx #
+r0.5 $
+b1 %
+x&
+Z'
+$end
+#5
+1!
+b10z1 "
+b0X10 #
+#10
+0!
+b10101010 "
+b0 #
+1&
+b11 #
+#15
+1!
+r-1.25 $
+z&
+1'
+#20
+0!
+$dumpoff
+x!
+bx "
+$end
+#25
+$dumpon
+1!
+b11110000 "
+$end
+#30
+0!

@@ -1,0 +1,40 @@
+{
+  "experiment": "exp_c",
+  "diagnosed_by": "Claude Code subagent",
+  "first_failure": {"time": 326000, "cycle": 33, "test": "overflow", "check": "count", "observed": "0x9", "expected": "0x8"},
+  "root_cause": {
+    "file": "build/debug/exp_c/rtl/sync_fifo.sv",
+    "line": 67,
+    "signal": "wr_ptr",
+    "hypothesis": "The write pointer is advanced on the raw request (if (wr_en)) instead of on the accepted write (if (wr_fire)). When the FIFO is full and a write is requested (overflow), the write must be dropped and wr_ptr held; instead wr_ptr increments from 0000 to 0001 at the 325000 edge while rd_ptr stays at 1000, so count = wr_ptr - rd_ptr becomes 9 and full (wrap bits differ AND low bits equal) deasserts. Because full is now 0, wr_fire becomes 1 and the next 'dropped' writes (0xE1, 0xE2) are actually stored into mem, overwriting unread entries (mem[1] changes 00001010 -> 11100001 at 335000), which explains the later rd_data mismatches (got 0xe1 expected 0xa). The pointer is now permanently ahead by the number of dropped writes, so count/empty/full are wrong in every subsequent test."
+  },
+  "evidence": [
+    {"tool": "value", "signal": "tb_sync_fifo.dut.count", "time": 321000, "observed_value": "1000", "interpretation": "Pre-edge of first overflow step: FIFO correctly holds 8 entries."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.full", "time": 321000, "observed_value": "1", "interpretation": "FIFO correctly full before the overflow edge."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.overflow", "time": 321000, "observed_value": "1", "interpretation": "Overflow correctly flagged: wr_en while full, so the write must be dropped."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_fire", "time": 321000, "observed_value": "0", "interpretation": "Write is NOT accepted (wr_fire=0) yet, per the RTL, wr_ptr update uses wr_en, not wr_fire."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_en", "time": 321000, "observed_value": "1", "interpretation": "Write requested during the full cycle."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_ptr", "time": 321000, "observed_value": "0000", "interpretation": "wr_ptr before the dropped write (wrap bit 0, addr 0) vs rd_ptr 1000 -> full."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_ptr", "time": 326000, "observed_value": "0001", "interpretation": "wr_ptr advanced despite the write being dropped (wr_fire was 0)."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_ptr", "time": 326000, "observed_value": "1000", "interpretation": "rd_ptr unchanged; no read, so the only state change is the illegal wr_ptr increment."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.count", "time": 326000, "observed_value": "1001", "interpretation": "First failure: count = 9 (> DEPTH), expected 8."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.full", "time": 326000, "observed_value": "0", "interpretation": "full deasserted because wr_ptr/rd_ptr low bits no longer match; expected 1."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.overflow", "time": 331000, "observed_value": "0", "interpretation": "Second overflow request not flagged because full is wrongly 0."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.wr_ptr", "start": 300000, "end": 350000, "observed_changes": [[305000, "1111"], [315000, "0000"], [325000, "0001"], [335000, "0010"], [345000, "0011"]], "interpretation": "wr_ptr keeps incrementing every edge with wr_en=1, including the three overflow cycles (325000, 335000, 345000)."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.rd_ptr", "start": 300000, "end": 350000, "observed_changes": [], "interpretation": "rd_ptr stays 1000 (value before window, set at 225000); no reads in this window."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.full", "start": 300000, "end": 350000, "observed_changes": [[315000, "1"], [325000, "0"]], "interpretation": "full asserted only for one cycle, then wrongly cleared by the illegal wr_ptr increment."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.wr_fire", "start": 300000, "end": 350000, "observed_changes": [[315000, "0"], [325000, "1"], [350000, "0"]], "interpretation": "After the bad increment, wr_fire becomes 1 so the subsequent 'dropped' writes are actually accepted into memory."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.count", "start": 300000, "end": 350000, "observed_changes": [[305000, "0111"], [315000, "1000"], [325000, "1001"], [335000, "1010"], [345000, "1011"]], "interpretation": "count exceeds DEPTH (9, 10, 11), matching sim.log errors."},
+    {"tool": "history", "signal": "tb_sync_fifo.g_mem[1].word", "start": 320000, "end": 350000, "observed_changes": [[335000, "11100001"]], "interpretation": "Unread entry mem[1] (was 00001010 = 0x0a) overwritten with overflow data 0xE1; explains later rd_data got 0xe1 expected 0xa."},
+    {"tool": "history", "signal": "tb_sync_fifo.wr_data", "start": 320000, "end": 350000, "observed_changes": [[320000, "11100000"], [330000, "11100001"], [340000, "11100010"], [350000, "00000000"]], "interpretation": "Overflow stimulus 0xE0, 0xE1, 0xE2 applied in the three overflow steps."}
+  ],
+  "alternative_hypotheses_considered": [
+    "full flag equation (line 54-55) wrong: rejected; full was correctly 1 at 321000 with wr_ptr=0000, rd_ptr=1000, and correctly evaluates to 0 for wr_ptr=0001; the error is in the pointer state, not the comparator.",
+    "count arithmetic (line 56) wrong: rejected; count = wr_ptr - rd_ptr is consistent with the pointer values in every query (0001-1000 = 1001).",
+    "Memory write enable (line 78) wrong: rejected; it correctly uses wr_fire. The memory corruption at 335000 is a secondary effect of full being wrongly 0.",
+    "Read-side bug (rd_ptr/rd_fire): rejected; rd_ptr did not move in the failing window and fill/drain tests passed.",
+    "Testbench/model error: rejected; spec says writes while full are dropped and must not change state, which the model implements."
+  ],
+  "confidence": "high",
+  "limitations": "Diagnosis is a hypothesis supported by waveform evidence and RTL reading, not a formal proof; the fix (wr_en -> wr_fire on line 67) was not re-simulated because re-running the simulator was out of scope. Later-test failures were attributed to the persistent pointer offset without exhaustively tracing each one."
+}

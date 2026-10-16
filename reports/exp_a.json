@@ -1,0 +1,38 @@
+{
+  "experiment": "exp_a",
+  "diagnosed_by": "Claude Code subagent",
+  "first_failure": {"time": 126000, "cycle": 13, "test": "fill", "check": "full", "observed": "0x1", "expected": "0x0"},
+  "root_cause": {
+    "file": "build/debug/exp_a/rtl/sync_fifo.sv",
+    "line": 54,
+    "signal": "full",
+    "hypothesis": "The full flag (lines 54-55) is computed as (wr_ptr[AW-1:0] + 1'b1 == rd_ptr[AW-1:0]), which ignores the extra wrap bit and is true when the FIFO holds DEPTH-1 = 7 entries, not DEPTH = 8. The spec says full means the FIFO holds DEPTH entries. With the extra-bit pointer scheme used here, the correct condition is (wr_ptr[AW] != rd_ptr[AW]) && (wr_ptr[AW-1:0] == rd_ptr[AW-1:0]). In the waveform, the 7th write lands at 125000 (wr_ptr=0111, rd_ptr=0000, count=0111) and full goes to 1 on that same edge. That raises overflow and drops wr_fire to 0 while wr_en is still 1, so the 8th write is lost. The FIFO then never holds more than 7 entries, which explains the follow-on count errors (7 vs 8, then 1 lower than expected throughout drain), the early empty/underflow, and the stale rd_data (0x7 instead of 0x8) in later tests. The same thing happens after wrap: at 306000, wr_ptr=1110 and rd_ptr=0111 (count 7) and full is again 1."
+  },
+  "evidence": [
+    {"tool": "history", "signal": "tb_sync_fifo.dut.wr_ptr", "start": 56000, "end": 147000, "observed_changes": [[65000, "0001"], [75000, "0010"], [85000, "0011"], [95000, "0100"], [105000, "0101"], [115000, "0110"], [125000, "0111"]], "interpretation": "Writes are accepted on each edge from 65000 to 125000 (7 writes). After 125000 wr_ptr stops at 0111 even though the test keeps pushing, so the 8th write is never accepted."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.rd_ptr", "start": 56000, "end": 147000, "observed_changes": [], "interpretation": "No reads during fill. rd_ptr stays 0000 (value before the window: 0000 since 5000)."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.full", "start": 56000, "end": 147000, "observed_changes": [[125000, "1"]], "interpretation": "full asserts at 125000, as soon as count reaches 7, one entry too early."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.count", "start": 56000, "end": 147000, "observed_changes": [[65000, "0001"], [75000, "0010"], [85000, "0011"], [95000, "0100"], [105000, "0101"], [115000, "0110"], [125000, "0111"]], "interpretation": "count saturates at 7 and never reaches 8 (DEPTH)."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.wr_fire", "start": 56000, "end": 147000, "observed_changes": [[60000, "1"], [125000, "0"]], "interpretation": "Write acceptance is blocked from 125000 because wr_fire = wr_en && !full and full is wrongly 1."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.overflow", "start": 56000, "end": 147000, "observed_changes": [[125000, "1"], [140000, "0"]], "interpretation": "overflow (wr_en && full) flags a dropped write while the FIFO holds only 7 of 8 entries."},
+    {"tool": "history", "signal": "tb_sync_fifo.dut.wr_en", "start": 120000, "end": 141000, "observed_changes": [[140000, "0"]], "interpretation": "wr_en is 1 (value before the window) up to 140000. The testbench is still requesting writes while wr_fire is 0, so the write is dropped by the DUT, not missing from the stimulus."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.full", "time": 115000, "observed_value": "0", "interpretation": "Before the failure (count=6) full is correctly 0."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.count", "time": 126000, "observed_value": "0111", "interpretation": "At the first failure, count is 7, so the FIFO is not full by the spec."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.full", "time": 126000, "observed_value": "1", "interpretation": "This is the first failing check: full=1 with only 7 entries stored."},
+    {"tool": "value", "signal": "tb_sync_fifo.m_count", "time": 126000, "observed_value": "00000000000000000000000000000111", "interpretation": "The reference model also holds 7 entries, so it expects full=0."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_ptr", "time": 126000, "observed_value": "0111", "interpretation": "wr_ptr[2:0]=111, and 111+1 wraps to 000, which equals rd_ptr[2:0]. That is exactly the condition that makes the line-54 expression true."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_ptr", "time": 126000, "observed_value": "0000", "interpretation": "rd_ptr address bits 000 match wr_ptr[2:0]+1, and the wrap bits are equal (0 vs 0), so the FIFO is not actually full."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.wr_ptr", "time": 306000, "observed_value": "1110", "interpretation": "Wrapped case in the overflow test: wr_ptr[2:0]=110."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.rd_ptr", "time": 306000, "observed_value": "0111", "interpretation": "rd_ptr[2:0]=111 = 110+1, so the wrong full condition is met again at count 7."},
+    {"tool": "value", "signal": "tb_sync_fifo.dut.full", "time": 306000, "observed_value": "1", "interpretation": "full is 1 at count 0111 after wrap too. The bug does not depend on pointer position; full always asserts at DEPTH-1."}
+  ],
+  "alternative_hypotheses_considered": [
+    "Testbench or stimulus problem (wr_en deasserted early): rejected. wr_en stays 1 until 140000 while wr_fire is 0 from 125000.",
+    "Wrong count expression (line 56): rejected. count = wr_ptr - rd_ptr correctly tracks accepted writes (0111 after 7 writes). The count errors follow from the dropped 8th write.",
+    "Pointer increment bug (lines 68/71): rejected. wr_ptr increments by exactly 1 per accepted write. It stops only because wr_fire=0.",
+    "Wrong wr_fire gating (line 50): it correctly implements wr_en && !full. The fault is in the full input to it.",
+    "rd_data/read path bug causing 0x7 vs 0x8 later: rejected as the primary cause. The value 0x8 was never written because the 8th push was dropped, so rd_data holding 0x7 is a downstream effect."
+  ],
+  "confidence": "high",
+  "limitations": "This is a hypothesis supported by waveform evidence and RTL reading, not a formal proof. The simulation was not re-run with a fix. The storage array (mem) is not dumped in the DUT scope (only TB g_mem words exist and were not used). Only the fill window and one overflow-test time point were examined in detail. Later failures (drain/overflow tests) are explained as consequences but were not traced edge by edge."
+}

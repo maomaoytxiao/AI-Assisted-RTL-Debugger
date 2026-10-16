@@ -1,0 +1,42 @@
+{
+  "_comment": "GROUND TRUTH for milestone 3. Must NOT be shown to the debugging agent. Experiment ids are deliberately neutral and not in task order.",
+  "golden_rtl": "rtl/sync_fifo.sv",
+  "faults": [
+    {
+      "experiment": "exp_a",
+      "fault_id": "F3_full_flag",
+      "description": "Full flag is generated incorrectly: it asserts when DEPTH-1 entries are stored (off-by-one, wrap bit ignored).",
+      "patch": {
+        "find": "    assign full      = (wr_ptr[AW] != rd_ptr[AW]) &&\n                       (wr_ptr[AW-1:0] == rd_ptr[AW-1:0]);\n",
+        "replace": "    assign full      = (wr_ptr[AW-1:0] + 1'b1 ==\n                        rd_ptr[AW-1:0]);\n"
+      },
+      "root_cause_line_markers": ["assign full", "rd_ptr[AW-1:0]);"],
+      "root_cause_signals": ["full"],
+      "activation": {"kind": "flag_mismatch", "flag": "full", "count_value": 8}
+    },
+    {
+      "experiment": "exp_b",
+      "fault_id": "F2_rd_ptr_on_empty",
+      "description": "Read pointer advances on rd_en even when the FIFO is empty (pointer update gated by rd_en instead of rd_fire).",
+      "patch": {
+        "find": "            if (rd_fire) begin\n                rd_data <= mem[rd_ptr[AW-1:0]];\n                rd_ptr  <= rd_ptr + 1'b1;\n            end\n",
+        "replace": "            if (rd_fire)\n                rd_data <= mem[rd_ptr[AW-1:0]];\n            if (rd_en)\n                rd_ptr  <= rd_ptr + 1'b1;\n"
+      },
+      "root_cause_line_markers": ["if (rd_en)", "rd_ptr  <= rd_ptr + 1'b1;"],
+      "root_cause_signals": ["rd_ptr"],
+      "activation": {"kind": "ptr_advances_while", "ptr": "rd_ptr", "request": "rd_en", "flag": "empty"}
+    },
+    {
+      "experiment": "exp_c",
+      "fault_id": "F1_wr_ptr_on_full",
+      "description": "Write pointer advances on wr_en even when the FIFO is full (pointer update gated by wr_en instead of wr_fire; storage write still gated).",
+      "patch": {
+        "find": "            if (wr_fire)\n                wr_ptr <= wr_ptr + 1'b1;\n",
+        "replace": "            if (wr_en)\n                wr_ptr <= wr_ptr + 1'b1;\n"
+      },
+      "root_cause_line_markers": ["if (wr_en)", "wr_ptr <= wr_ptr + 1'b1;"],
+      "root_cause_signals": ["wr_ptr"],
+      "activation": {"kind": "ptr_advances_while", "ptr": "wr_ptr", "request": "wr_en", "flag": "full"}
+    }
+  ]
+}

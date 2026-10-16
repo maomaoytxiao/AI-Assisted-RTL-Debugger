@@ -1,0 +1,51 @@
+[*] GTKWave save file for sync_fifo (open with: make wave)
+[dumpfile] "build/sync_fifo.vcd"
+[timestart] 0
+[size] 1400 800
+[sst_width] 240
+[signals_width] 220
+@200
+-Clock / Reset
+@28
+tb_sync_fifo.dut.clk
+tb_sync_fifo.dut.rst_n
+@200
+-Write port
+@28
+tb_sync_fifo.dut.wr_en
+tb_sync_fifo.dut.wr_fire
+@22
+tb_sync_fifo.dut.wr_data[7:0]
+@28
+tb_sync_fifo.dut.full
+tb_sync_fifo.dut.overflow
+@200
+-Read port
+@28
+tb_sync_fifo.dut.rd_en
+tb_sync_fifo.dut.rd_fire
+@22
+tb_sync_fifo.dut.rd_data[7:0]
+@28
+tb_sync_fifo.dut.empty
+tb_sync_fifo.dut.underflow
+@200
+-Internal state
+@24
+tb_sync_fifo.dut.count[3:0]
+@22
+tb_sync_fifo.dut.wr_ptr[3:0]
+tb_sync_fifo.dut.rd_ptr[3:0]
+tb_sync_fifo.g_mem[0].word[7:0]
+tb_sync_fifo.g_mem[1].word[7:0]
+tb_sync_fifo.g_mem[2].word[7:0]
+tb_sync_fifo.g_mem[3].word[7:0]
+tb_sync_fifo.g_mem[4].word[7:0]
+tb_sync_fifo.g_mem[5].word[7:0]
+tb_sync_fifo.g_mem[6].word[7:0]
+tb_sync_fifo.g_mem[7].word[7:0]
+@200
+-Testbench model
+@24
+tb_sync_fifo.m_count
+tb_sync_fifo.errors
